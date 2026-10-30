@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>בונים סכר עם בני הבונה</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@900&family=Rubik:wght@400;500&display=swap');
+:root{--bg:#e6f0ee;--surface:#fff;--ink:#12303a;--muted:#4d6b72;--line:#b9d0cd;--water:#2a8c9a;--wood:#8a5a2b;--ok:#2f7d3f;--okbg:#e3f3e5;--bad:#a63a2b;--badbg:#f9e6e2;--sky:#d4ebf2;--ground:#6b4a2b;--stone:#8d9aa0;--log:#a8743a;--mud:#5b3f27;--btn:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1d22;--surface:#142a31;--ink:#e3f0ee;--muted:#9ab8bc;--line:#2b4a52;--water:#3aa5b5;--wood:#d6a96b;--ok:#7cd18a;--okbg:#17321e;--bad:#f0907f;--badbg:#3a1f1a;--sky:#1b3a45;--ground:#4a3320;--btn:#12303a}}
+:root[data-theme="dark"]{--bg:#0d1d22;--surface:#142a31;--ink:#e3f0ee;--muted:#9ab8bc;--line:#2b4a52;--water:#3aa5b5;--wood:#d6a96b;--ok:#7cd18a;--okbg:#17321e;--bad:#f0907f;--badbg:#3a1f1a;--sky:#1b3a45;--ground:#4a3320;--btn:#12303a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.6 'Rubik',system-ui,sans-serif;min-height:100vh}
+.wrap{max-width:760px;margin:0 auto;padding:22px 16px 44px}
+h1{font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:clamp(28px,6vw,42px);line-height:1.15;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 16px}
+svg{display:block;width:100%;height:auto;direction:ltr;border-radius:12px;border:2px solid var(--wood);background:var(--sky)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;margin-top:14px}
+.say{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+.say .b{font-size:40px;line-height:1}
+.say p{margin:0;background:var(--bg);padding:8px 14px;border-radius:12px;font-weight:500}
+.q{font-size:clamp(18px,3vw,21px);font-weight:500;margin:0 0 14px;line-height:1.5}
+.opts{display:grid;gap:9px}
+.opt,.btn{all:unset;box-sizing:border-box;cursor:pointer;padding:12px 16px;border:2px solid var(--line);border-radius:10px;line-height:1.45;transition:border-color .15s,background .15s}
+.opt:hover:not([disabled]){border-color:var(--water)}
+.opt:focus-visible,.btn:focus-visible{outline:3px solid var(--water);outline-offset:2px}
+.opt.ok{border-color:var(--ok);background:var(--okbg)}
+.opt.bad{border-color:var(--bad);background:var(--badbg)}
+.opt.dim{opacity:.55}
+.fb{margin-top:14px;padding:12px 14px;border-radius:10px;background:var(--bg);border-inline-start:5px solid var(--water)}
+.btn{margin-top:14px;display:inline-block;background:var(--wood);color:var(--btn);border-color:var(--wood);font-weight:500;padding:11px 26px}
+.btn:hover{filter:brightness(1.1)}
+.stat{display:flex;justify-content:space-between;color:var(--muted);font-size:15px;margin:0 0 8px}
+.big{font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:44px;line-height:1.1;margin:4px 0}
+.col{transform-box:fill-box;transform-origin:bottom;animation:drop .5s cubic-bezier(.3,1.6,.5,1)}
+@keyframes drop{from{transform:translateY(-70px);opacity:0}to{transform:none;opacity:1}}
+.flood{transform-box:fill-box;transform-origin:bottom;transform:scaleY(.02);transition:transform 2.2s ease-in-out}
+.flood.go{transform:scaleY(1)}
+.leak{opacity:0;stroke:var(--water);stroke-width:4;stroke-linecap:round;stroke-dasharray:6 10;animation:fall .6s linear infinite;animation-play-state:paused}
+.go-leak .leak{opacity:.95;animation-play-state:running;transition:opacity 1s 1.8s}
+.trick{opacity:0}.go-leak .trick{opacity:.8;transition:opacity 1s 1.8s;stroke-width:2;animation:fall 1s linear infinite}
+@keyframes fall{to{stroke-dashoffset:-32}}
+.hidden{display:none}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>בונים סכר עם בני</h1>
+  <p class="sub">כל תשובה נכונה מוסיפה קטע לסכר. תשובה שגויה משאירה סדק. בסוף נבדוק אם הסכר עומד בשיטפון.</p>
+  <svg id="dam" viewBox="0 0 400 230" role="img" aria-label="סכר הבונה הנבנה לאורך המשחק"></svg>
+  <div class="card" id="card" aria-live="polite"></div>
+</div>
+<script>
+var Q=[
+{q:"עובדה או מיתוס? הבונה מתכנן את הסכר בשרטוטים וחישובים מראש.",o:["מיתוס","עובדה"],e:"הבונה לא משרטט ולא מחשב. הוא פועל מאינסטינקט, אבל המבנה שלו מציית לחוקי הפיזיקה וההנדסה."},
+{q:"למה שיני הבונה לא נשחקות עד שאינן?",o:["הן גדלות לאורך כל חייו ונשחקות תוך כדי עבודה","הן מתחלפות פעם בשנה","הן עשויות ממתכת","הוא אוכל רק עצים רכים"],e:"שיניים חותכות חזקות, שגדלות כל חייהן, משמשות כמסור טבעי."},
+{q:"איפה הלחץ ההידרוסטטי של המים על הסכר הוא הגדול ביותר?",o:["בתחתית, בנקודה העמוקה ביותר","בראש הסכר","באמצע בדיוק","הלחץ זהה בכל מקום"],e:"ככל שהעומק גדל הלחץ עולה. לכן בסיס הסכר חייב להיות רחב, כבד וחזק."},
+{q:"איזה חומר משמש 'משקולת ייצוב' ומונע מהזרם לסחוף את הענפים?",o:["אבנים","עלים","בוץ דליל","מים"],e:"האבנים (Ballast) מוסיפות מסה כבדה ומייצבות את המבנה מול זרם המים."},
+{q:"מה תפקיד הבוץ והצמחייה בסכר?",o:["למלא חללים בין הענפים ולהאט את מעבר המים","לשמש מזון לחורף","להסוות את הסכר מטורפים","להוסיף משקל לבסיס"],e:"הם חומר האיטום: ממלאים חללים ומאטים את קצב מעבר המים."},
+{q:"עובדה או מיתוס? כל הבונים בונים סכרים.",o:["מיתוס","עובדה"],e:"בנהרות עמוקים מספיק הבונה פשוט חופר מחילה בגדה, בלי לשנות את זרימת המים."},
+{q:"מה מייחד את בית המגורים (Lodge) של הבונה?",o:["חדר יבש מעל המים עם כניסה תת-מימית שמגינה מטורפים","הוא נבנה לרוחב הנחל כדי לעצור את הזרם","הוא מלא מים כדי לגדל דגים","הוא נבנה על ענפי עצים גבוהים"],e:"בית המגורים נועד להגנה וגידול צאצאים. הסכר נועד לשנות את מפלס המים."},
+{q:"למה סכר טוב לא אוטם את המים לחלוטין?",o:["חלחול הדרגתי מפחית את הסיכון לקריסה והמים ממשיכים לזרום במורד הנחל","כי הבונה לא יודע לאטום","כדי שהמים יתאדו מהר יותר","כדי שיהיה קל לחצות אותו"],e:"הסכר מאט את המים ולא חוסם אותם. אותו עיקרון חשוב גם במעבדה: סכר אטום מדי הוא לא סכר טבעי."},
+{q:"איזו השפעה שלילית אפשרית יש לסכר בונה?",o:["הצפת דרכים ושטחים חקלאיים, הטבעת עצים וחסימת נתיבי נדידת דגים","ייבוש מוחלט של הנחל","הרס כל בתי הגידול באזור","אין לו שום השפעה על בני אדם"],e:"הסכר משנה את המערכת באופן קיצוני, והשינוי לא תמיד חיובי לכולם."},
+{q:"מה בני אדם לומדים מהבונה (ביומימיקרי)?",o:["לבנות מכשולים חלקיים שמאטים זרימה ומונעים שחיקת קרקע, במקום קירות בטון אטומים","לכרות יערות כדי לבנות סכרים","לייבש נחלים בתקופות גשומות","לבנות רק מבטון"],e:"מבנים חדירים חלקית מאטים את הזרימה, מפחיתים סחף ושומרים מים לימי יובש."}
+];
+var N=Q.length,H=[46,66,84,98,106,106,98,84,66,46],W=400/N,G=190;
+var svg=document.getElementById('dam'),card=document.getElementById('card');
+var i=0,score=0,res=[];
+function el(t,a,p){var e=document.createElementNS('http://www.w3.org/2000/svg',t);for(var k in a)e.setAttribute(k,a[k]);(p||svg).appendChild(e);return e}
+function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function shuffle(a){for(var k=a.length-1;k>0;k--){var j=Math.floor(Math.random()*(k+1)),t=a[k];a[k]=a[j];a[j]=t}return a}
+function scene(){
+  svg.innerHTML='';
+  el('rect',{x:0,y:G,width:400,height:40,fill:'var(--ground)'});
+  el('rect',{id:'fl',class:'flood',x:0,y:G-100,width:400,height:100,fill:'var(--water)',opacity:.6});
+  el('g',{id:'cols'});
+  el('text',{x:8,y:20,fill:'var(--ink)','font-size':13,'font-family':'Rubik'}).textContent='מבט מהצד המורד של הנחל';
+}
+function col(k,ok){
+  var g=el('g',{class:'col'},document.getElementById('cols')),x=k*W,h=H[Math.round(k*(H.length-1)/(N-1))]||60;
+  if(ok){
+    var hs=h*.4,hl=h*.4,hm=h*.2;
+    el('rect',{x:x,y:G-hs,width:W,height:hs,fill:'var(--stone)',stroke:'var(--ink)','stroke-width':.6},g);
+    el('circle',{cx:x+W*.3,cy:G-hs*.5,r:5,fill:'#aab5ba'},g);el('circle',{cx:x+W*.7,cy:G-hs*.4,r:4,fill:'#aab5ba'},g);
+    el('rect',{x:x,y:G-hs-hl,width:W,height:hl,fill:'var(--log)',stroke:'var(--ink)','stroke-width':.6},g);
+    for(var s=1;s<4;s++)el('line',{x1:x,x2:x+W,y1:G-hs-hl*s/4,y2:G-hs-hl*s/4+2,stroke:'#6d4620','stroke-width':1.5},g);
+    el('rect',{x:x,y:G-h,width:W,height:hm,fill:'var(--mud)'},g);
+    if(res.filter(Boolean).length===N&&(k===2||k===N-3))el('line',{class:'trick',x1:x+W/2,x2:x+W/2,y1:G-h*.35,y2:G+30,stroke:'var(--water)'},g);
+  }else{
+    el('rect',{x:x+3,y:G-70,width:W-6,height:70,fill:'none',stroke:'var(--bad)','stroke-width':1.5,'stroke-dasharray':'4 3'},g);
+    el('text',{x:x+W/2,y:G-30,'text-anchor':'middle','font-size':18,fill:'var(--bad)'},g).textContent='סדק';
+    el('line',{class:'leak',x1:x+W/2,x2:x+W/2,y1:G-60,y2:G+34},g);
+  }
+}
+function start(){
+  i=0;score=0;res=[];svg.classList.remove('go-leak');scene();
+  card.innerHTML='<div class="say"><span class="b">🦫</span><p>היי, אני בני! עזרו לי לבנות סכר שיחזיק מעמד. ענו נכון ואני מניח עוד שכבה של אבנים, ענפים ובוץ.</p></div><button class="btn" id="go">מתחילים לבנות</button>';
+  document.getElementById('go').onclick=show;
+}
+function show(){
+  var x=Q[i],opts=shuffle(x.o.map(function(t,n){return{t:t,ok:n===0}}));
+  var h='<p class="stat"><span>שאלה '+(i+1)+' מתוך '+N+'</span><span>קטעי סכר: '+score+'</span></p><p class="q">'+esc(x.q)+'</p><div class="opts">';
+  opts.forEach(function(o){h+='<button class="opt" data-ok="'+o.ok+'">'+esc(o.t)+'</button>'});
+  card.innerHTML=h+'</div><div id="fb"></div>';
+  card.querySelectorAll('.opt').forEach(function(b){b.onclick=function(){pick(b,x)}});
+}
+var YES=["בול! עוד שכבה לסכר.","מהנדס אמיתי!","יפה מאוד, הענף התייצב."],NO=["אופס, נוצר סדק בסכר.","הממ, זה ידלוף...","כמעט! נתקן בפעם הבאה."];
+function pick(b,x){
+  var ok=b.dataset.ok==='true';
+  card.querySelectorAll('.opt').forEach(function(o){o.disabled=true;o.style.cursor='default';
+    if(o.dataset.ok==='true')o.classList.add('ok');else if(o===b)o.classList.add('bad');else o.classList.add('dim')});
+  res.push(ok);if(ok)score++;
+  col(i,ok);
+  var last=i===N-1,m=(ok?YES:NO)[Math.floor(Math.random()*3)];
+  document.getElementById('fb').innerHTML='<div class="fb"><strong>🦫 '+m+'</strong><br>'+esc(x.e)+'</div><button class="btn" id="nx">'+(last?'לבדיקת השיטפון':'לשאלה הבאה')+'</button>';
+  var nx=document.getElementById('nx');nx.focus();
+  nx.onclick=function(){if(last)flood();else{i++;show()}};
+}
+function flood(){
+  card.innerHTML='<div class="say"><span class="b">🌧️</span><p>הגשם מתחזק, מפלס המים עולה...</p></div>';
+  svg.parentNode.classList.add('x');
+  svg.classList.add('go-leak');
+  requestAnimationFrame(function(){setTimeout(function(){document.getElementById('fl').classList.add('go')},60)});
+  setTimeout(end,3600);
+}
+function end(){
+  var gaps=N-score,m,e;
+  if(gaps===0){e='🏆';m='סכר מושלם! שימו לב לטפטוף הדק: גם הסכר הכי טוב לא אוטם הכול, ובדיוק כך הוא נשאר יציב.'}
+  else if(gaps<=3){e='💪';m='סכר חזק עם כמה דליפות. עוד סבב שיפור, כמו במעגל התכנון ההנדסי, והוא יהיה מושלם.'}
+  else if(gaps<=6){e='🔧';m='הסכר מחזיק בקושי ודולף לא מעט. זה בדיוק הזמן לשלב השיפור והאופטימיזציה!'}
+  else{e='🌊';m='הנחל זורם דרך הסכר. כל מהנדס טוב מתחיל בגרסה 1.0, בואו ננסה גרסה 2.0.'}
+  card.innerHTML='<div class="say"><span class="b">'+e+'</span><p>'+m+'</p></div><div class="big">'+score+' / '+N+'</div><div>קטעי סכר שנבנו כהלכה</div><button class="btn" id="rs">לבנות סכר חדש</button>';
+  document.getElementById('rs').onclick=start;
+}
+start();
+</script>
+</body>
+</html>
